@@ -63,6 +63,45 @@ console.dir('<textarea name="desc">' + escapeHtml(desc) + '</textarea>')
 // -> '<textarea name="desc">I &lt;b&gt;think&lt;/b&gt; this is good.</textarea>'
 ```
 
+## 转义语义说明（中文）
+
+本库对以下五类特殊字符进行 HTML 实体转义：
+
+| 字符 | 实体 |
+| ---- | ---- |
+| `&`  | `&amp;` |
+| `<`  | `&lt;` |
+| `>`  | `&gt;` |
+| `"`  | `&quot;` |
+| `'`  | `&#39;`（注意不是 `&apos;`） |
+
+关键行为：
+
+- **先处理 `&`，防止二次转义**：实现采用按码点（charCode）单遍扫描，
+  遇到特殊字符直接输出对应实体，因此实体中引入的 `&` 不会被再次转义，
+  不会出现 `&lt;` 被写成 `&amp;lt;` 的问题。若改用多次 `String#replace`，
+  必须先替换 `&` 再替换其余字符。
+- **「已安全」快路径**：仅当字符串中完全不含 `" ' & < >` 任一字符时才原样返回；
+  不会因为缺少 `<`/`>` 就跳过对 `&`、`'`、`"` 的转义。
+- **非字符串入参强制字符串化**：任何非字符串输入都会先经过 `'' + string`
+  转换，例如 `undefined` → `'undefined'`、`null` → `'null'`、`42` → `'42'`、
+  `{}` → `'[object Object]'`，绝不直接返回原始 number/object。
+- **混合串全量转义**：替换是全局的，字符串中所有出现的特殊字符都会被转义，
+  例如 `escapeHtml('&foo <> bar "fizz" l\'a')` 严格等于
+  `'&amp;foo &lt;&gt; bar &quot;fizz&quot; l&#39;a'`。
+
+## 测试
+
+```bash
+$ npm test
+```
+
+当前真实测试摘要（mocha，`test/` 目录共 30 条规格）：
+
+```
+  30 passing
+```
+
 ## Benchmark
 
 ```

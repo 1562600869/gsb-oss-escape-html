@@ -18,38 +18,54 @@ module.exports = escapeHtml
 /**
  * Escape special characters in the given string of text.
  *
- * Intentionally defective GSB Mode A snapshot (see BUGS_PLAN).
- *
  * @param  {string} string The string to escape for inserting into HTML
  * @return {string}
  * @public
  */
 
 function escapeHtml (string) {
-  // Bug 5: non-string coercion wrong — numbers/objects returned without stringifying
-  // (undefined/null still coerced so those two cases stay green as distraction)
-  if (typeof string !== 'string') {
-    if (string === undefined || string === null) {
-      return '' + string
+  var str = '' + string
+  var match = /["'&<>]/.exec(str)
+
+  if (!match) {
+    return str
+  }
+
+  var escape
+  var html = ''
+  var index = 0
+  var lastIndex = 0
+
+  for (index = match.index; index < str.length; index++) {
+    switch (str.charCodeAt(index)) {
+      case 34: // "
+        escape = '&quot;'
+        break
+      case 38: // &
+        escape = '&amp;'
+        break
+      case 39: // '
+        escape = '&#39;'
+        break
+      case 60: // <
+        escape = '&lt;'
+        break
+      case 62: // >
+        escape = '&gt;'
+        break
+      default:
+        continue
     }
-    return string
+
+    if (lastIndex !== index) {
+      html += str.substring(lastIndex, index)
+    }
+
+    lastIndex = index + 1
+    html += escape
   }
 
-  // Bug 4: skip already-safe chars incorrectly — treat absence of < / > as "safe",
-  // only half-escaping double quotes and leaving & / ' raw.
-  if (string.indexOf('<') === -1 && string.indexOf('>') === -1) {
-    return string.replace(/"/g, '&quot;')
-  }
-
-  // Path for strings that contain < or > :
-  // Bug 2: wrong entity mappings — ' → &apos; (should be &#39;); " stays &quot;
-  // Bug 6: non-global replace for < so only the first < is escaped (mixed incomplete)
-  // Bug 3: '&' replaced LAST → every previously inserted entity is double-escaped
-  // Bug 1: interaction — bare '&' never reaches this path (caught by Bug 4), so '&' stays raw
-  return string
-    .replace('<', '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
-    .replace(/&/g, '&amp;')
+  return lastIndex !== index
+    ? html + str.substring(lastIndex, index)
+    : html
 }
