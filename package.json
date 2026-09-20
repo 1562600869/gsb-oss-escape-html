@@ -1,0 +1,23 @@
+{
+  "name": "escape-html",
+  "description": "Escape string for use in HTML (GSB Mode A green init snapshot)",
+  "version": "1.0.3",
+  "license": "MIT",
+  "keywords": [
+    "escape",
+    "html",
+    "utility"
+  ],
+  "repository": "component/escape-html",
+  "devDependencies": {
+    "mocha": "^10.2.0"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "index.js"
+  ],
+  "scripts": {
+    "test": "mocha --check-leaks --reporter spec test/"
+  }
+}
