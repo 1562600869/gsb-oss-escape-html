@@ -42,6 +42,39 @@ respectively; these are known as "raw text elements" in the HTML standard).
 the value of an attribute, where the value is quoted with either a double
 quote character (`"`) or a single quote character (`'`).
 
+## 转义语义（中文）
+
+本库只转义五类字符，匹配字符集等价于 `["'&<>]`，映射固定为：
+
+- `&` → `&amp;`
+- `<` → `&lt;`
+- `>` → `&gt;`
+- `"` → `&quot;`
+- `'` → `&#39;`（使用数字实体，**不使用** `&apos;`）
+
+关键实现约定：
+
+- **先处理 `&`，防止二次转义**：若采用多次 `String#replace`，必须先替换 `&`，
+  否则后续插入的 `&lt;`、`&quot;` 等实体会被末尾的 `&` 替换打成
+  `&amp;lt;`、`&amp;quot;`。本实现直接按码点（`charCodeAt`）单遍扫描原始字符串，
+  每个字符只检查一次，从根本上不存在对已生成实体再次转义的问题。
+- **「已安全」快路径**：仅当字符串不含上述任何一个特殊字符时才原样返回；
+  不能因为缺少 `<` / `>` 就跳过 `&`、`'`、`"` 的转义。
+- **非字符串强制字符串化**：入参先经 `'' + string` 转换，因此
+  `undefined` → `'undefined'`、`null` → `'null'`、`42` → `'42'`、
+  `{}` → `'[object Object]'`，绝不直接返回原始 number/object。
+- **混合串全量转义**：替换是全局的（每个特殊字符都处理，而非只处理首个）。
+  例如 `escapeHtml('&foo <> bar "fizz" l\'a')` 严格等于
+  `'&amp;foo &lt;&gt; bar &quot;fizz&quot; l&#39;a'`。
+
+### 测试
+
+运行 `npm test`（mocha，`--check-leaks --reporter spec test/`），真实结果摘要：
+
+```
+  30 passing
+```
+
 ## Example
 
 The `escapeHtml` function is designed to accept a string input of text and
